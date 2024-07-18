@@ -1,6 +1,7 @@
 "use client";
 
 // TIPTAP IMPORST
+import Youtube from '@tiptap/extension-youtube'
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Document from "@tiptap/extension-document";
@@ -72,7 +73,6 @@ const Note = () => {
 
   // Function to handle the shortCutSideBarToggle active state change
   const handleShortCutSideBarToggle = () => {
-    console.log('hllojkldsfj;s')
     setIsShortCutSideBarToggleActive(!isShortCutSideBarToggleActive)
   }
 
@@ -111,12 +111,19 @@ const Note = () => {
       }),
       TaskItem.configure({
         nested: true,
+        HTMLAttributes: {
+          class: 'bg-blue-300',
+        },
       }),
       StarterKit.configure({
         document: false,
       }),
       Placeholder.configure({
         placeholder: "Start typing ...",
+      }),
+      Youtube.configure({
+        controls: false,
+        nocookie: true,
       }),
     ],
     content: noteContent,

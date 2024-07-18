@@ -3,11 +3,13 @@
 //* ICON COMPONENT IMPORTS *//
 import IconJournalBookmarkFill from "../components/icons/IconJournalBookmarkFill";
 import IconPlus from "../components/icons/IconPlus";
-
+import IconListUl from "../components/icons/IconListUl";
 //* JSX COMPONENTS IMPORTS*//
 import Notetab from "../components/Notetab";
 import Navbar from "../components/Navbar";
 import NoteInspectorMenu from "../components/NoteInspectorMenu";
+import IconTableCellsLarge from "../components/icons/IconTableCellsLarge";
+// import Inspector from "../components/Inspector";
 
 //* FIREBASE IMPORTS *//
 import { initFirebase } from "../firebase";
@@ -31,6 +33,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 //* NEXTJS IMPORTS *//
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Inspector from "../components/Inspector";
 
 const initialContextMenu = {
   show: false,
@@ -137,6 +140,7 @@ const Notes = () => {
   return (
     <>
       <Navbar />
+      <Inspector />
       {/* ABSOLUTE POSITION OF THE NOTES INSPECTOR MENU */}
       {contextMenu.show && (
         <NoteInspectorMenu
@@ -148,12 +152,19 @@ const Notes = () => {
       )}
 
       <div className="px-[2rem] py-10 max-w-[1500px] mx-auto ">
-        <div>
+        <div className = 'flex items-center'>
           <h1 className="flex items-center gap-3 text-2xl mt-2">
             Jacks Notes <IconJournalBookmarkFill className="size-5" />
           </h1>
 
-          <div className=""></div>
+          <div className="py-2 px-4 dark:bg-darkMode bg-zinc-100 gap-3 flex items-center mt-2 rounded-md ml-10 text-gray-500">
+            <button>
+              <IconListUl />
+            </button>
+            <button>
+              <IconTableCellsLarge />
+            </button>
+          </div>
         </div>
         <main className="mt-10 grid grid-cols-4 gap-5">
           <button
