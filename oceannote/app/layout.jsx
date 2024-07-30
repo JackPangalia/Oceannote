@@ -1,7 +1,6 @@
 import './styles/globals.scss'
 import {  Work_Sans } from 'next/font/google'
-import Providers from "./components/providers";
-import CommandList from './components/CommandList';
+import Providers from './components/Providers'
 
 const roboto_mono = Work_Sans({
   subsets: ['latin']
