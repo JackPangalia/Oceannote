@@ -1,13 +1,11 @@
 'use client'
 
-// Imports
-import React, { useCallback, useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { getAuth } from "firebase/auth";
 import { useAuthState } from "react-firebase-hooks/auth";
 
-// Local imports
 import { initFirebase, db } from "../firebase";
 import Navbar from "../components/Navbar";
 import CommandList from "../components/CommandList";
@@ -15,29 +13,20 @@ import { editorExtensions } from "../../config/editorExtensions";
 import { debounce } from "../../utils/debounce";
 import { saveNote, loadNote } from "../../services/noteService";
 
-// Styles
 import "../styles/TiptapEditor.scss";
 
-// Constants
-const DEBOUNCE_DELAY = 1000; // 1 second delay
+const DEBOUNCE_DELAY = 1000;
 
-const Note = () => {
-  // Firebase initialization
-  initFirebase();
-  const auth = getAuth();
-  const [user] = useAuthState(auth);
-
-  // State and refs
+// This component will use useSearchParams
+const NoteContent = ({ user }) => {
   const searchParams = useSearchParams();
   const noteId = searchParams.get("noteId");
   const [noteContent, setNoteContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [showCommandListMenu, setShowCommandListMenu] = useState(false);
   const lastSavedContent = useRef("");
   const lastSavedTitle = useRef("");
   const captureRef = useRef(null);
 
-  // Editor configuration
   const editor = useEditor({
     extensions: editorExtensions,
     content: noteContent,
@@ -57,25 +46,31 @@ const Note = () => {
     },
   });
 
-  // Debounced save function
   const debouncedSave = useCallback(
     debounce((content, title) => saveNote(content, title, user, noteId, setIsSaving, lastSavedContent, lastSavedTitle), DEBOUNCE_DELAY),
     [noteId, user]
   );
 
-  // Load note on component mount
   useEffect(() => {
     if (user && noteId) {
       loadNote(user, noteId, setNoteContent, lastSavedContent);
     }
   }, [user, noteId]);
 
-  // Update editor content when noteContent changes
   useEffect(() => {
     if (editor && noteContent && !editor.isFocused) {
       editor.commands.setContent(noteContent);
     }
   }, [editor, noteContent]);
+
+  return <EditorContent editor={editor} ref={captureRef} />;
+};
+
+const Note = () => {
+  initFirebase();
+  const auth = getAuth();
+  const [user] = useAuthState(auth);
+  const [showCommandListMenu, setShowCommandListMenu] = useState(false);
 
   return (
     <>
@@ -84,7 +79,9 @@ const Note = () => {
       />
       {showCommandListMenu && <CommandList />}
       <div className={`${showCommandListMenu ? "opacity-20" : ""}`}>
-        <EditorContent editor={editor} ref={captureRef} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <NoteContent user={user} />
+        </Suspense>
       </div>
     </>
   );
