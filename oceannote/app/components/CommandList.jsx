@@ -28,7 +28,7 @@ const CommandList = () => {
   );
 
   return (
-    <div className="overflow-y-scroll dark:bg-darkMode bg-lightMode z-50 w-[20rem] sm:w-[25rem] lg:w-[27rem] h-[27rem] shadow-md border-black border-[1px] p-4 rounded-md flex flex-col gap-2 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+    <div className="overflow-y-scroll dark:bg-darkMode bg-lightMode z-50 w-[20rem] sm:w-[25.1rem] lg:w-[27rem] h-[27rem] shadow-md border-black border-[1px] p-4 rounded-md flex flex-col gap-2 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
       <div className='flex items-center py-1 px-1 gap-4 mb-3'>
         <IconBxSearchAlt className='size-5' />
         <input
