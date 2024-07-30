@@ -1,12 +1,31 @@
-import Link from "next/link"
+import Link from "next/link";
+import { useTheme } from "next-themes";
 
-const Notetab = ({title, paragraphSnippet, onContextMenu, link}) => {
+const Notetab = ({ title, paragraphSnippet, onContextMenu, link, bgColor }) => {
+  const { resolvedTheme } = useTheme();
+
+  // FUNCTION THAT SETS THE NOTEBOOK BACKGROUND COLOR
+  const setNoteBoxBackgroundColor = (noteColor) => {
+    if (noteColor === "#f4f4f5" && resolvedTheme === "dark") {
+      return "#1F2123";
+    } else if (noteColor === "#1F2123" && resolvedTheme === "light") {
+      return "#f4f4f5";
+    } else {
+      return noteColor;
+    }
+  };
+
   return (
-    <Link href = {link} className = 'dark:bg-darkMode bg-zinc-100 rounded-lg hover:bg-zinc-200 flex flex-col px-4 py-2 text-sm max-w-[22.5rem] transition-all duration-200' onContextMenu={onContextMenu}>
-      <h4 className = 'font-semibold'>{title}</h4>
-      <p className = 'text-sm'>{paragraphSnippet}</p>
+    <Link
+      style={{ backgroundColor: bgColor }}
+      href={link}
+      className="dark:text-black h-[4rem] flex flex-col px-5 py-3 text-sm transition-all duration-500 rounded-md border-zinc-800 dark:border-zinc-600 border-[1px] shadow-md"
+      onContextMenu={onContextMenu}
+    >
+      <h4 className="font-semibold line-clamp-2 overflow-ellipsis overflow-hidden">{title}</h4>
+      <p className="text-sm line-clamp-2 overflow-ellipsis overflow-hidden">{paragraphSnippet}</p>
     </Link>
-  )
-}
+  );
+};
 
-export default Notetab
+export default Notetab;

@@ -1,6 +1,7 @@
 import './styles/globals.scss'
-import { Roboto_Mono, Work_Sans } from 'next/font/google'
+import {  Work_Sans } from 'next/font/google'
 import Providers from "./components/providers";
+import CommandList from './components/CommandList';
 
 const roboto_mono = Work_Sans({
   subsets: ['latin']
@@ -15,7 +16,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={roboto_mono.className}>
-        <Providers>
+        <Providers >
           {children}
         </Providers>
       </body>

@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import Link from "next/link";
 import { getAuth } from "firebase/auth";
@@ -27,15 +27,23 @@ const Home = () => {
   }
 
   if (user) {
-    router.push('/notes')
+    router.push("/notes");
   }
 
   return (
     <>
-      <main className="h-[82vh] flex justify-center items-center flex-col gap-10">
-        <h1 className="lg:text-5xl md:text-4xl text-3xl lg:w-1/3 md:w-3/4 mx-[2rem] text-center ">
+      <main className="h-[90vh] px-[2rem] max-w-[1500px] mx-auto flex justify-center items-center flex-col gap-10 ">
+        <h1 className="lg:text-5xl md:text-4xl text-3xl lg:w-1/3 md:w-3/4 mx-[2rem] text-center">
           Note Taking Simply Designed For Your Output.
         </h1>
+
+        <p className="lg:w-1/2 md:w-3/4 px-[2rem] text-center text-zinc-400 text-sm mx-auto ">
+          Your personalized gateway to simple digital organization –
+          seamlessly simplicity. Our carefully crafted digital notes
+          effortlessly meet all your needs, providing the ease of a traditional
+          paper notes with the sophistication of modern document editors.
+        </p>
+
         <Link
           href="/signup"
           className="border-zinc-500 shadow-lg border-[1px] px-4 py-2 rounded-lg dark:hover:bg-darkMode hover:bg-zinc-100 transition-all duration-200"
@@ -43,12 +51,23 @@ const Home = () => {
           Sign up now
         </Link>
       </main>
-      <p className="lg:w-1/2 md:w-3/4 px-[2rem] text-center text-zinc-400 text-sm mx-auto mb-5">
-        Your personalized gateway to advanced digital organization – seamlessly
-        simplicity. Our carefully crafted digital notebooks effortlessly meet
-        all your needs, providing the ease of a traditional paper notebook with
-        the sophistication of modern document editors.
-      </p>
+      {/* <div className="grid grid-cols-5 gap-3 px-[2rem] max-w-[1500px] mx-auto">
+        <div className="flex justify-center items-center bg-zinc-100 border-zinc-800 border-[1px] rounded h-[10rem] ">
+          Ultra Simple
+        </div>
+        <div className="flex justify-center items-center bg-pink-200 border-zinc-800 border-[1px] rounded h-[10rem] ">
+          item
+        </div>
+        <div className="flex justify-center items-center bg-orange-300 border-zinc-800 border-[1px] rounded h-[10rem] ">
+          item
+        </div>
+        <div className="flex justify-center items-center bg-blue-300 border-zinc-800 border-[1px] rounded h-[10rem] ">
+          item
+        </div>
+        <div className="flex justify-center items-center bg-red-300 border-zinc-800 border-[1px] rounded h-[10rem] ">
+          item
+        </div>
+      </div> */}
     </>
   );
 };
