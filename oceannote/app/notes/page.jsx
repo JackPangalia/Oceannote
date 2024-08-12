@@ -6,6 +6,7 @@ import IconPlus from "../components/icons/IconPlus";
 import IconListUl from "../components/icons/IconListUl";
 import IconFolder from "../components/icons/IconFolder";
 import IconBxSearchAlt from "../components/icons/IconBxSearchAlt";
+import IconPlusCircle from "../components/icons/IconPlusCircle";
 
 //* JSX COMPONENTS IMPORTS*//
 import Notetab from "../components/Notetab";
@@ -25,6 +26,7 @@ import {
   doc,
   deleteDoc,
   Timestamp,
+  serverTimestamp,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -61,6 +63,10 @@ const Notes = () => {
 
   const [showCommandListMenu, setShowCommandListMenu] = useState(false);
 
+  if (!user) {
+    router.push("/");
+  }
+
   // Retrive the notes from the database
   useEffect(() => {
     if (!loading) {
@@ -91,6 +97,8 @@ const Notes = () => {
 
   // Function to create quick note
   const createQuickNote = async () => {
+    if (!user) return;
+
     try {
       const notebookRef = await addDoc(
         collection(db, `users/${userId}/notes/`),
@@ -99,6 +107,7 @@ const Notes = () => {
           content: "",
           color: "#f4f4f5",
           tags: ["all"],
+          lastSaved: serverTimestamp(),
         }
       );
 
@@ -150,15 +159,6 @@ const Notes = () => {
     });
   };
 
-  //* ACCOUNT FOR PROFILE LOADING *//
-  if (loading) {
-    return (
-      <div className="h-screen flex justify-center items-center text-4xl">
-        <h1>Loading</h1>
-      </div>
-    );
-  }
-
   // Find the selected note
   const selectedNote = quickNotes.find(
     (note) => note.id === contextMenu.noteId
@@ -177,29 +177,35 @@ const Notes = () => {
   const getFilteredNotes = (notes) => {
     const notesWithin1Day = [];
     const notesWithin7Days = [];
-    const notesWithin30Days = [];
+    const notesAfter7Days = [];
 
     notes.forEach((note) => {
       if (isEditedWithin(note.lastSaved, 1)) {
         notesWithin1Day.push(note);
       } else if (isEditedWithin(note.lastSaved, 7)) {
         notesWithin7Days.push(note);
-      } else if (isEditedWithin(note.lastSaved, 30)) {
-        notesWithin30Days.push(note);
+      } else {
+        notesAfter7Days.push(note);
       }
     });
 
-    return { notesWithin1Day, notesWithin7Days, notesWithin30Days };
+    return { notesWithin1Day, notesWithin7Days, notesAfter7Days };
   };
 
-  const { notesWithin1Day, notesWithin7Days, notesWithin30Days } =
+  const { notesWithin1Day, notesWithin7Days, notesAfter7Days } =
     getFilteredNotes(searchNotes(searchQuery, quickNotes));
 
-  // console.log(notesWithin1Day, notesWithin7Days, notesWithin30Days);
-  console.log(notesWithin7Days.length);
+  //* ACCOUNT FOR PROFILE LOADING *//
+  if (loading) {
+    return (
+      <div className="h-screen flex justify-center items-center text-4xl">
+        <h1>Loading</h1>
+      </div>
+    );
+  }
 
   return (
-    <div className="">
+    <div>
       <Navbar
         commandListToggleOnClick={() =>
           setShowCommandListMenu(!showCommandListMenu)
@@ -226,7 +232,7 @@ const Notes = () => {
         }`}
       >
         <div className="flex items-center sm:justify-start ">
-          <div className="py-[7.8px] px-[8px] dark:bg-darkMode bg-lightMode border-zinc-800 hover:bg-zinc-200 transition-all duration-200 border-[1px] gap-3 flex items-center mt-2 rounded-md shadow-md">
+          <div className="py-[7.8px] px-[7.8px] dark:bg-darkMode bg-lightMode border-zinc-800 hover:bg-zinc-200 transition-all duration-200 border-[1px] gap-3 flex items-center mt-2 rounded-md shadow-md">
             <button
               className="dark:hover:text-white hover:text-black"
               onClick={createQuickNote}
@@ -248,39 +254,37 @@ const Notes = () => {
           </div>
         </div>
         <div className="mt-7 gap-6 flex flex-col pb-10">
-          {/* <span className="text-lg">Notebooks</span> */}
-          {/* <div className="grid xl:grid-cols-6 md:grid-cols-4 sm:grid-cols-3 grid-cols-2 sm:gap-5 gap-3 w-full">
-            <NotebookTab color={"#f4f4f5"} />
-            <NotebookTab color={"#fef08a"} />
-            <NotebookTab color="#93c5fd" />
-            <NotebookTab color={"#f4f4f5"} />
-            <NotebookTab color={"#86efac"} />
-            <NotebookTab color={"#fbcfe8"} />
-          </div> */}
-          <span className="text-xl">Today</span>
-          <main className="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-3 gap-1 w-full rounded">
-            {searchNotes(searchQuery, notesWithin1Day).map((note, index) => (
-              <Notetab
-                link={{
-                  pathname: "/note",
-                  query: {
-                    noteId: note.id,
-                  },
-                }}
-                onContextMenu={(e) => handleContextMenu(e, note.id)}
-                id={note.id}
-                key={index}
-                bgColor={note.color}
-                title={note.title}
-                paragraphSnippet={removeFirstElementAndExtractText(
-                  note.content
+          {notesWithin1Day.length > 0 && (
+            <>
+              <span className="text-xl">Today</span>
+              <main className="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-3 gap-1 w-full rounded">
+                {searchNotes(searchQuery, notesWithin1Day).map(
+                  (note, index) => (
+                    <Notetab
+                      link={{
+                        pathname: "/note",
+                        query: {
+                          noteId: note.id,
+                        },
+                      }}
+                      onContextMenu={(e) => handleContextMenu(e, note.id)}
+                      id={note.id}
+                      key={index}
+                      bgColor={note.color}
+                      title={note.title}
+                      paragraphSnippet={removeFirstElementAndExtractText(
+                        note.content
+                      )}
+                    />
+                  )
                 )}
-              />
-            ))}
-          </main>
+              </main>
+            </>
+          )}
+
           {notesWithin7Days.length > 0 && (
             <>
-              <span className="text-xl">Previous 7 days</span>
+              <span className="text-xl">Previous Week</span>
               <main className="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-3 gap-1 w-full rounded">
                 {searchNotes(searchQuery, notesWithin7Days).map(
                   (note, index) => (
@@ -305,11 +309,12 @@ const Notes = () => {
               </main>
             </>
           )}
-          {notesWithin30Days.length > 0 && (
+
+          {notesWithin1Day.length > 0 && (
             <>
-              <span className="text-xl">Previous 30 days</span>
+              <span className="text-xl">Later</span>
               <main className="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-3 gap-1 w-full rounded">
-                {searchNotes(searchQuery, notesWithin7Days).map(
+                {searchNotes(searchQuery, notesAfter7Days).map(
                   (note, index) => (
                     <Notetab
                       link={{

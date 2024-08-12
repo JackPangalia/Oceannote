@@ -22,7 +22,7 @@ const Notetab = ({ title, paragraphSnippet, onContextMenu, link, bgColor }) => {
       className="dark:text-black h-[4rem] flex flex-col px-5 py-3 text-sm transition-all duration-500 rounded-md border-zinc-800 dark:border-zinc-600 border-[1px] shadow-md"
       onContextMenu={onContextMenu}
     >
-      <h4 className="font-semibold line-clamp-2 overflow-ellipsis overflow-hidden">{title}</h4>
+      <h4 className="font-bold line-clamp-2 overflow-ellipsis overflow-hidden">{title}</h4>
       <p className="text-sm line-clamp-2 overflow-ellipsis overflow-hidden">{paragraphSnippet}</p>
     </Link>
   );

@@ -51,23 +51,6 @@ const Home = () => {
           Sign up now
         </Link>
       </main>
-      {/* <div className="grid grid-cols-5 gap-3 px-[2rem] max-w-[1500px] mx-auto">
-        <div className="flex justify-center items-center bg-zinc-100 border-zinc-800 border-[1px] rounded h-[10rem] ">
-          Ultra Simple
-        </div>
-        <div className="flex justify-center items-center bg-pink-200 border-zinc-800 border-[1px] rounded h-[10rem] ">
-          item
-        </div>
-        <div className="flex justify-center items-center bg-orange-300 border-zinc-800 border-[1px] rounded h-[10rem] ">
-          item
-        </div>
-        <div className="flex justify-center items-center bg-blue-300 border-zinc-800 border-[1px] rounded h-[10rem] ">
-          item
-        </div>
-        <div className="flex justify-center items-center bg-red-300 border-zinc-800 border-[1px] rounded h-[10rem] ">
-          item
-        </div>
-      </div> */}
     </>
   );
 };

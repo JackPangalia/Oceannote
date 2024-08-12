@@ -1,5 +1,5 @@
 'use client'
-
+ 
 import React, { useCallback, useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -12,6 +12,7 @@ import CommandList from "../components/CommandList";
 import { editorExtensions } from "../../config/editorExtensions";
 import { debounce } from "../../utils/debounce";
 import { saveNote, loadNote } from "../../services/noteService";
+import { useRouter } from "next/navigation";
 
 import "../styles/TiptapEditor.scss";
 
@@ -56,7 +57,6 @@ const NoteContent = ({ user }) => {
       loadNote(user, noteId, setNoteContent, lastSavedContent);
     }
   }, [user, noteId]);
-
   useEffect(() => {
     if (editor && noteContent && !editor.isFocused) {
       editor.commands.setContent(noteContent);
@@ -68,9 +68,17 @@ const NoteContent = ({ user }) => {
 
 const Note = () => {
   initFirebase();
+
   const auth = getAuth();
   const [user] = useAuthState(auth);
   const [showCommandListMenu, setShowCommandListMenu] = useState(false);
+
+  // router
+  const router = useRouter();
+
+  if (!user) {
+    router.push('/')
+  }
 
   return (
     <>
