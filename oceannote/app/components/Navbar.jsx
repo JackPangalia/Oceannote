@@ -5,6 +5,7 @@ import IconJournalBookmarkFill from "./icons/IconJournalBookmarkFill";
 import IconMoonStars from "./icons/IconMoonStars";
 import IconListNested from "./icons/IconListNested";
 import IconSun from "./icons/IconSun";
+import IconSettingsOutline from "./icons/IconSettingsOutline";
 
 //* OTHER IMPORTS *//
 import Link from "next/link";
@@ -45,7 +46,9 @@ const Navbar = ({ commandListToggleOnClick }) => {
             showNavbar || pathname === "/notes" ? "fade-in" : "fade-out"
           } `}
         >
-          Oceannote / Notes
+          {pathname === "/notes" && "Oceannote / Notes"}
+          {pathname === "/note" && "Oceannote / Note taking"}
+          {pathname === "/settings" && "Oceannote / Settings"}
         </h1>
 
         <nav
@@ -54,20 +57,28 @@ const Navbar = ({ commandListToggleOnClick }) => {
           } p-4 w-fit px-[2rem] absolute right-0`}
         >
           <ul className="flex gap-6 text-gray-500 items-center">
-            <li className = 'md:block hidden'>
+            {/* <li className = 'md:block hidden'>
               <button
                 className="mt-2 hover:text-black dark:hover:text-white transition-all duration-150"
                 onClick={() => commandListToggleOnClick()}
               >
                 <IconListNested />
               </button>
-            </li>
+            </li> */}
             <li>
               <Link
                 href="/notes"
                 className="hover:text-black dark:hover:text-white transition-all duration-150"
               >
                 <IconJournalBookmarkFill />
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/settings"
+                className="hover:text-black dark:hover:text-white transition-all duration-150"
+              >
+                <IconSettingsOutline />
               </Link>
             </li>
             <li>
@@ -80,6 +91,8 @@ const Navbar = ({ commandListToggleOnClick }) => {
                 {resolvedTheme === "dark" ? <IconSun /> : <IconMoonStars />}
               </button>
             </li>
+
+            
 
             {/* <li>
               <button className="mt-2">

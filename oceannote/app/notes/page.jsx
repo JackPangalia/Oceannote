@@ -7,6 +7,7 @@ import IconListUl from "../components/icons/IconListUl";
 import IconFolder from "../components/icons/IconFolder";
 import IconBxSearchAlt from "../components/icons/IconBxSearchAlt";
 import IconPlusCircle from "../components/icons/IconPlusCircle";
+import IconBxNote from "../components/icons/IconBxNote";
 
 //* JSX COMPONENTS IMPORTS*//
 import Notetab from "../components/Notetab";
@@ -205,7 +206,7 @@ const Notes = () => {
   }
 
   return (
-    <div>
+    <>
       <Navbar
         commandListToggleOnClick={() =>
           setShowCommandListMenu(!showCommandListMenu)
@@ -225,19 +226,19 @@ const Notes = () => {
           userId={userId}
         />
       )}
-
       <div
         className={`px-[2rem] max-w-[1500px] mx-auto mt-3 ${
           showCommandListMenu && "opacity-15"
         }`}
       >
-        <div className="flex items-center sm:justify-start ">
+        <input placeholder = '"quote"' className = 'outline-none w-[20rem] text-gray-500 bg-transparent'/>
+        <div className="flex items-center sm:justify-start mt-5">
           <div className="py-[7.8px] px-[7.8px] dark:bg-darkMode bg-lightMode border-zinc-800 hover:bg-zinc-200 transition-all duration-200 border-[1px] gap-3 flex items-center mt-2 rounded-md shadow-md">
             <button
               className="dark:hover:text-white hover:text-black"
               onClick={createQuickNote}
             >
-              <IconPlus />
+              <IconBxNote className = 'text-gray-500'/>
             </button>
           </div>
 
@@ -247,7 +248,7 @@ const Notes = () => {
             </button>
             <input
               placeholder="Search all notes"
-              className="bg-transparent outline-none  md:w-[13.5rem] w-full"
+              className="bg-transparent outline-none md:w-[13.5rem] w-full pb-[1px]"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />
@@ -339,7 +340,7 @@ const Notes = () => {
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
