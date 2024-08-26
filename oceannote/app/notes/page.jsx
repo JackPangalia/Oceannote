@@ -8,6 +8,8 @@ import IconFolder from "../components/icons/IconFolder";
 import IconBxSearchAlt from "../components/icons/IconBxSearchAlt";
 import IconPlusCircle from "../components/icons/IconPlusCircle";
 import IconBxNote from "../components/icons/IconBxNote";
+import IconFolder2 from "../components/icons/IconFolder2";
+import IconFolderPlus from "../components/icons/IconFolderPlus";
 
 //* JSX COMPONENTS IMPORTS*//
 import Notetab from "../components/Notetab";
@@ -15,11 +17,18 @@ import Navbar from "../components/Navbar";
 import NoteInspectorMenu from "../components/NoteInspectorMenu";
 import NotebookTab from "../components/NotebookTab";
 import CommandList from "../components/CommandList";
+import CreateFolderMenu from "../components/CreateFolderMenu";
+import FolderInspectorMenu from "../components/FolderInspectorMenu";
+import FolderTab from "../components/FolderTab";
+
+//* HOOKS *//
+import useFolders from "../hooks/useFolders";
 
 //* FIREBASE IMPORTS *//
 import { initFirebase } from "../firebase";
 import { db } from "../firebase";
 import {
+  getDocs,
   collection,
   addDoc,
   query,
@@ -28,6 +37,7 @@ import {
   deleteDoc,
   Timestamp,
   serverTimestamp,
+  where,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -36,11 +46,18 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const initialContextMenu = {
+const noteTabInitialContextMenu = {
   show: false,
   x: 0,
   y: 0,
   noteId: null,
+};
+
+const folderTabInitalContextMenu = {
+  show: false,
+  x: 0,
+  y: 0,
+  folderId: null,
 };
 
 const Notes = () => {
@@ -60,9 +77,18 @@ const Notes = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   // context menu object
-  const [contextMenu, setContextMenu] = useState(initialContextMenu);
+  const [noteTabContextMenu, setNoteTabContextMenu] = useState(
+    noteTabInitialContextMenu
+  );
+  const [folderTabContextMenu, setFolderTabContextMenu] = useState(
+    folderTabInitalContextMenu
+  );
 
   const [showCommandListMenu, setShowCommandListMenu] = useState(false);
+
+  const [isCreatingFolder, setCreatingFolder] = useState(false);
+  const [folders, setFolders] = useState([]);
+  const [selectedFolder, setSelectedFolder] = useState("all");
 
   if (!user) {
     router.push("/");
@@ -71,33 +97,65 @@ const Notes = () => {
   // Retrive the notes from the database
   useEffect(() => {
     if (!loading) {
-      const q = query(collection(db, `users/${userId}/notes`));
+      const q = query(
+        collection(db, `users/${userId}/notes`),
+        where("folderId", "==", selectedFolder)
+      );
 
       onSnapshot(q, (querySnapshot) => {
-        let quickNotesArrary = [];
-
+        const notesInFolder = [];
         querySnapshot.forEach((doc) => {
-          quickNotesArrary.push({ ...doc.data(), id: doc.id });
+          notesInFolder.push({ ...doc.data(), id: doc.id });
         });
-
-        setQuickNotes(quickNotesArrary);
+        setQuickNotes(notesInFolder);
       });
     }
-  }, [loading]);
+  }, [loading, selectedFolder]);
 
-  const handleContextMenu = (e, noteId) => {
+  // Fetch folders and listen to changes in the folder state
+  useEffect(() => {
+    if (!user) return;
+  
+    const q = query(collection(db, `users/${userId}/folders`));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const folderList = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setFolders(folderList);
+    });
+  
+    // Cleanup function
+    return () => unsubscribe();
+  }, [user, userId]);
+
+
+  const handleNoteTabContextMenu = (e, noteId) => {
     e.preventDefault();
 
     const { pageX, pageY } = e;
-    setContextMenu({ show: true, x: pageX, y: pageY, noteId: noteId });
+    setNoteTabContextMenu({ show: true, x: pageX, y: pageY, noteId: noteId });
   };
 
-  console.log(contextMenu);
+  const handleFolderTabContextMenu = (e, folderId) => {
+    e.preventDefault();
 
-  const contextMenuClose = () => setContextMenu({ show: false });
+    const { pageX, pageY } = e;
+    console.log(pageX);
+    setFolderTabContextMenu({
+      show: true,
+      x: pageX,
+      y: pageY,
+      folderId: folderId,
+    });
+  };
+
+  const noteTabContextMenuClose = () => setNoteTabContextMenu({ show: false });
+  const folderTabContextMenuClose = () =>
+    setFolderTabContextMenu({ show: false });
 
   // Function to create quick note
-  const createQuickNote = async () => {
+  const createQuickNote = async (folderId = "all") => {
     if (!user) return;
 
     try {
@@ -108,7 +166,9 @@ const Notes = () => {
           content: "",
           color: "#f4f4f5",
           tags: ["all"],
+          folderId: folderId,
           lastSaved: serverTimestamp(),
+          createdAt: serverTimestamp(),
         }
       );
 
@@ -162,7 +222,11 @@ const Notes = () => {
 
   // Find the selected note
   const selectedNote = quickNotes.find(
-    (note) => note.id === contextMenu.noteId
+    (note) => note.id === noteTabContextMenu.noteId
+  );
+
+  const selectedFolderFromContextMenu = folders.find(
+    (folder) => folder.id === folderTabContextMenu.folderId
   );
 
   const isEditedWithin = (lastSaved, days) => {
@@ -214,31 +278,62 @@ const Notes = () => {
       />
       {showCommandListMenu && <CommandList />}
 
+      {/* ABSOLUTE POSTIONS */}
       {/* ABSOLUTE POSITION OF THE NOTES INSPECTOR MENU */}
-      {contextMenu.show && (
+      {noteTabContextMenu.show && (
         <NoteInspectorMenu
+          folders = {folders}
           tags={selectedNote?.tags}
-          x={contextMenu.x}
-          y={contextMenu.y}
-          closeContextMenu={contextMenuClose}
-          onClickDelete={() => handleDeleteNote(contextMenu.noteId)}
-          noteId={contextMenu.noteId}
+          x={noteTabContextMenu.x}
+          y={noteTabContextMenu.y}
+          closeContextMenu={noteTabContextMenuClose}
+          onClickDelete={() => handleDeleteNote(noteTabContextMenu.noteId)}
+          noteId={noteTabContextMenu.noteId}
           userId={userId}
         />
       )}
+
+      {folderTabContextMenu.show && (
+        <FolderInspectorMenu
+          x={folderTabContextMenu.x}
+          y={folderTabContextMenu.y}
+          closeContextMenu={folderTabContextMenuClose}
+          folderId={folderTabContextMenu.folderId}
+          userId={userId}
+        />
+      )}
+
+      {/* ABSOLUTE POSTIONS */}
+
       <div
         className={`px-[2rem] max-w-[1500px] mx-auto mt-3 ${
           showCommandListMenu && "opacity-15"
         }`}
       >
-        <input placeholder = '"quote"' className = 'outline-none w-[20rem] text-gray-500 bg-transparent'/>
+        <input
+          placeholder='"quote"'
+          className="outline-none w-[20rem] text-gray-500 bg-transparent"
+        />
         <div className="flex items-center sm:justify-start mt-5">
           <div className="py-[7.8px] px-[7.8px] dark:bg-darkMode bg-lightMode border-zinc-800 hover:bg-zinc-200 transition-all duration-200 border-[1px] gap-3 flex items-center mt-2 rounded-md shadow-md">
             <button
               className="dark:hover:text-white hover:text-black"
-              onClick={createQuickNote}
+              onClick={() => setCreatingFolder(!isCreatingFolder)}
             >
-              <IconBxNote className = 'text-gray-500'/>
+              <IconFolderPlus className="text-gray-500" />
+            </button>
+
+            <CreateFolderMenu
+              isMenuOpen={isCreatingFolder}
+              closeMenu={() => setCreatingFolder(false)}
+            />
+          </div>
+          <div className="ml-4 py-[7.8px] px-[7.8px] dark:bg-darkMode bg-lightMode border-zinc-800 hover:bg-zinc-200 transition-all duration-200 border-[1px] gap-3 flex items-center mt-2 rounded-md shadow-md">
+            <button
+              className="dark:hover:text-white hover:text-black"
+              onClick={() => createQuickNote(selectedFolder)}
+            >
+              <IconBxNote className="text-gray-500" />
             </button>
           </div>
 
@@ -254,90 +349,116 @@ const Notes = () => {
             />
           </div>
         </div>
-        <div className="mt-7 gap-6 flex flex-col pb-10">
-          {notesWithin1Day.length > 0 && (
-            <>
-              <span className="text-xl">Today</span>
-              <main className="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-3 gap-1 w-full rounded">
-                {searchNotes(searchQuery, notesWithin1Day).map(
-                  (note, index) => (
-                    <Notetab
-                      link={{
-                        pathname: "/note",
-                        query: {
-                          noteId: note.id,
-                        },
-                      }}
-                      onContextMenu={(e) => handleContextMenu(e, note.id)}
-                      id={note.id}
-                      key={index}
-                      bgColor={note.color}
-                      title={note.title}
-                      paragraphSnippet={removeFirstElementAndExtractText(
-                        note.content
-                      )}
-                    />
-                  )
-                )}
-              </main>
-            </>
-          )}
+        <div className="flex flex-col ">
+          <div className="mt-7">
+            <h4 className="text-xl mb-6">{selectedFolder}</h4>
+            <div className="flex flex-wrap gap-3 ">
+              {folders.map((folder) => (
+                <FolderTab
+                  key={folder.id}
+                  title={folder.name}
+                  bgColor={folder.color}
+                  isSelected={folder.name === selectedFolder}
+                  onContextMenu={(e) =>
+                    handleFolderTabContextMenu(e, folder.id)
+                  }
+                  onClick={() => setSelectedFolder(folder.name)}
+                />
+              ))}
+            </div>
+          </div>
 
-          {notesWithin7Days.length > 0 && (
-            <>
-              <span className="text-xl">Previous Week</span>
-              <main className="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-3 gap-1 w-full rounded">
-                {searchNotes(searchQuery, notesWithin7Days).map(
-                  (note, index) => (
-                    <Notetab
-                      link={{
-                        pathname: "/note",
-                        query: {
-                          noteId: note.id,
-                        },
-                      }}
-                      onContextMenu={(e) => handleContextMenu(e, note.id)}
-                      id={note.id}
-                      key={index}
-                      bgColor={note.color}
-                      title={note.title}
-                      paragraphSnippet={removeFirstElementAndExtractText(
-                        note.content
-                      )}
-                    />
-                  )
-                )}
-              </main>
-            </>
-          )}
+          <div className="mt-7 gap-6 flex flex-col pb-10">
+            {notesWithin1Day.length > 0 && (
+              <>
+                <span className="text-xl">Today</span>
+                <main className="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-3 gap-1 w-full rounded">
+                  {searchNotes(searchQuery, notesWithin1Day).map(
+                    (note, index) => (
+                      <Notetab
+                        link={{
+                          pathname: "/note",
+                          query: {
+                            noteId: note.id,
+                          },
+                        }}
+                        onContextMenu={(e) =>
+                          handleNoteTabContextMenu(e, note.id)
+                        }
+                        id={note.id}
+                        key={index}
+                        bgColor={note.color}
+                        title={note.title}
+                        paragraphSnippet={removeFirstElementAndExtractText(
+                          note.content
+                        )}
+                      />
+                    )
+                  )}
+                </main>
+              </>
+            )}
 
-          {notesWithin1Day.length > 0 && (
-            <>
-              <span className="text-xl">Later</span>
-              <main className="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-3 gap-1 w-full rounded">
-                {searchNotes(searchQuery, notesAfter7Days).map(
-                  (note, index) => (
-                    <Notetab
-                      link={{
-                        pathname: "/note",
-                        query: {
-                          noteId: note.id,
-                        },
-                      }}
-                      onContextMenu={(e) => handleContextMenu(e, note.id)}
-                      id={note.id}
-                      key={index}
-                      bgColor={note.color}
-                      title={note.title}
-                      paragraphSnippet={removeFirstElementAndExtractText(
-                        note.content
-                      )}
-                    />
-                  )
-                )}
-              </main>
-            </>
-          )}
+            {notesWithin7Days.length > 0 && (
+              <>
+                <span className="text-xl">Previous Week</span>
+                <main className="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-3 gap-1 w-full rounded">
+                  {searchNotes(searchQuery, notesWithin7Days).map(
+                    (note, index) => (
+                      <Notetab
+                        link={{
+                          pathname: "/note",
+                          query: {
+                            noteId: note.id,
+                          },
+                        }}
+                        onContextMenu={(e) =>
+                          handleNoteTabContextMenu(e, note.id)
+                        }
+                        id={note.id}
+                        key={index}
+                        bgColor={note.color}
+                        title={note.title}
+                        paragraphSnippet={removeFirstElementAndExtractText(
+                          note.content
+                        )}
+                      />
+                    )
+                  )}
+                </main>
+              </>
+            )}
+
+            {notesWithin1Day.length > 0 && (
+              <>
+                <span className="text-xl">Later</span>
+                <main className="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-3 gap-1 w-full rounded">
+                  {searchNotes(searchQuery, notesAfter7Days).map(
+                    (note, index) => (
+                      <Notetab
+                        link={{
+                          pathname: "/note",
+                          query: {
+                            noteId: note.id,
+                          },
+                        }}
+                        onContextMenu={(e) =>
+                          handleNoteTabContextMenu(e, note.id)
+                        }
+                        id={note.id}
+                        key={index}
+                        bgColor={note.color}
+                        title={note.title}
+                        paragraphSnippet={removeFirstElementAndExtractText(
+                          note.content
+                        )}
+                      />
+                    )
+                  )}
+                </main>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </>

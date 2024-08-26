@@ -12,6 +12,7 @@ import { db } from "../firebase";
 import { useTheme } from "next-themes";
 import IconTag from "./icons/IconTag";
 import IconCloseCircle from "./icons/IconCloseCircle";
+import IconFolder2 from "./icons/IconFolder2";
 
 const NoteInspectorMenu = ({
   x,
@@ -21,6 +22,7 @@ const NoteInspectorMenu = ({
   onClickDelete,
   noteId,
   userId,
+  folders,
 }) => {
   initFirebase();
 
@@ -33,9 +35,9 @@ const NoteInspectorMenu = ({
   // SUB MENU STATES
   const [isColorPickerActive, setColorPickerActive] = useState(false);
   const [isDeleteMenuActive, setDeleteMenuActive] = useState(false);
-  const [isRenamingActive, setRenamingActive] = useState(false);
   const [isAddingTagMenuActive, setAddingTagMenuActive] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [isTransferFolderMenuActive, setTransferFolderMenuActive] =
+    useState(false);
   const [tag, setTag] = useState("");
 
   const handleSubMenus = (menu) => {
@@ -43,14 +45,22 @@ const NoteInspectorMenu = ({
       setColorPickerActive(true);
       setDeleteMenuActive(false);
       setAddingTagMenuActive(false);
+      setTransferFolderMenuActive(false);
     } else if (menu === "deleteMenu") {
       setColorPickerActive(false);
       setDeleteMenuActive(true);
       setAddingTagMenuActive(false);
+      setTransferFolderMenuActive(false);
     } else if (menu === "addTagMenu") {
       setColorPickerActive(false);
       setDeleteMenuActive(false);
       setAddingTagMenuActive(true);
+      setTransferFolderMenuActive(false);
+    } else if (menu == "transferFolderMenu") {
+      setColorPickerActive(false);
+      setDeleteMenuActive(false);
+      setAddingTagMenuActive(false);
+      setTransferFolderMenuActive(true);
     }
   };
 
@@ -86,6 +96,16 @@ const NoteInspectorMenu = ({
     }
   };
 
+  const transferFolder = async (noteId, folderName) => {
+    try {
+      await updateDoc(doc(db, `users/${userId}/notes/${noteId}`), {
+        folderId: folderName
+      })
+    } catch (error) {
+      console.log('error transering folders', error)
+    }
+  }
+
   const handleAddTagKeyDown = (event) => {
     if (event.key === "Enter") {
       addTag(noteId, tag);
@@ -97,10 +117,10 @@ const NoteInspectorMenu = ({
     <div ref={contextMenuRef}>
       {/* COLOR PICKER SELECTOR */}
       <div
-        style={{ top: `${y + 41}px`, left: `${x}px` }}
+        style={{ top: `${y + 41}px`, left: `${x + 35}px` }}
         className={`${
           isColorPickerActive ? "grid" : "hidden"
-        } bg-zinc-100 dark:bg-zinc-800 dark:border-none shadow-md border-zinc-800 border-[1px] absolute p-2 grid grid-cols-2 gap-1 rounded`}
+        } bg-lightMode dark:bg-zinc-800 dark:border-none shadow-md border-zinc-800 border-[1px] absolute p-2 grid grid-cols-2 gap-1 rounded-md`}
       >
         <button
           className="bg-red-300 p-2 rounded-lg"
@@ -141,20 +161,23 @@ const NoteInspectorMenu = ({
         style={{ top: `${y + 41}px`, left: `${x}px` }}
         className={`${
           isDeleteMenuActive ? "flex" : "hidden"
-        } absolute dark:bg-zinc-800 dark:border-none bg-zinc-100 shadow-md border-zinc-800 border-[1px] p-2 flex-col rounded`}
+        } absolute dark:bg-zinc-800 dark:border-none bg-lightMode shadow-md border-zinc-800 border-[1px] p-2 flex-col rounded-md`}
       >
-        <label className="text-sm mb-2">
-          permanent delete
-        </label>
-        <button onClick = {() => onClickDelete()}className = 'mr-auto text-[12px] border-zinc-800 bg-red-300 hover:bg-red-400 dark:text-black transition-all duration-200 border-[1px] px-[6.5px] py-[3px] rounded shadow-md'>delete</button>
+        <label className="text-sm mb-2">permanent delete</label>
+        <button
+          onClick={() => onClickDelete()}
+          className="mr-auto text-[12px] border-zinc-800 bg-red-300 hover:bg-red-400 dark:text-black transition-all duration-200 border-[1px] px-[6.5px] py-[3px] rounded shadow-md"
+        >
+          delete
+        </button>
       </div>
 
-    {/* ADD TAG MENU */}
+      {/* ADD TAG MENU */}
       <div
-        style={{ top: `${y + 41}px`, left: `${x}px` }}
+        style={{ top: `${y + 41}px`, left: `${x + 60}px` }}
         className={`${
           isAddingTagMenuActive ? "flex" : "hidden"
-        } absolute dark:bg-zinc-800 dark:border-none bg-zinc-100 shadow-md border-zinc-800 border-[1px] p-2 flex-col rounded`}
+        } absolute dark:bg-zinc-800 dark:border-none bg-lightMode shadow-md border-zinc-800 border-[1px] p-2 flex-col rounded-md`}
       >
         <div className="mb-2 flex gap-2">
           {tags?.length > 0 ? (
@@ -164,7 +187,7 @@ const NoteInspectorMenu = ({
                 key={index}
                 onClick={() => removeTag(noteId, tag)}
               >
-                <span className="absolute top-0 right-0 z-50 bg-zinc-100 dark:bg-zinc-800 shadow-md text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <span className="absolute top-0 right-0 z-50 bg-lightMode dark:bg-zinc-800 shadow-md text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <IconCloseCircle />
                 </span>
                 <span className="text-[12px] bg-zinc-800 dark:bg-zinc-100 dark:text-black text-white px-[6.5px] py-[3px] rounded z-0">
@@ -195,9 +218,28 @@ const NoteInspectorMenu = ({
         </div>
       </div>
 
+      {/* MOVE FOLDER MENU */}
+      <div
+        className={`${
+          isTransferFolderMenuActive ? "block" : "hidden"
+        } bg-lightMode dark:bg-darkMode absolute border-[1px] border-zinc-800 shadow-md rounded-md p-2 flex flex-col gap-2 text-sm min-w-50`}
+        style={{ top: `${y + 41}px`, left: `${x + 85}px` }}
+      >
+        <p>Select a new folder</p>
+        {folders.map((folder, index) => (
+          <button
+            onClick = {() => transferFolder(noteId, folder.name)}
+            className="dark:bg-darkMode bg-lightMode px-2 rounded border-[1px] border-zinc-800 dark:border-zinc-500 text-start"
+            key={index}
+          >
+            {folder.name}
+          </button>
+        ))}
+      </div>
+
       <div
         style={{ top: `${y}px`, left: `${x}px` }}
-        className="absolute z-50 text-black dark:text-white bg-zinc-100 dark:bg-zinc-800 shadow-md dark:border-none border-zinc-800 border-[1px] px-4 py-2 flex items-center gap-2 rounded"
+        className="absolute z-50 text-black dark:text-white bg-lightMode dark:bg-zinc-800 shadow-md dark:border-none border-zinc-800 border-[1px] px-3 py-2 flex items-center gap-2 rounded-md "
       >
         <button
           className="text-lg"
@@ -215,6 +257,12 @@ const NoteInspectorMenu = ({
           onClick={() => handleSubMenus("addTagMenu")}
         >
           <IconTag />
+        </button>
+        <button
+          className="text-lg"
+          onClick={() => handleSubMenus("transferFolderMenu")}
+        >
+          <IconFolder2 />
         </button>
       </div>
     </div>
