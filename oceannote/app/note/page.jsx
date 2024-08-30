@@ -33,7 +33,7 @@ const NoteContent = ({ user }) => {
     content: noteContent,
     editorProps: {
       attributes: {
-        class: "min-h-screen max-w-[8.5in] mx-auto xl:pt-20 lg:pt-10 md:pt-5 text-lg px-[2rem] pb-5 outline-none",
+        class: "min-h-screen max-w-[8.5in] mx-auto xl:pt-20 lg:pt-10 md:pt-5 pt-16 text-lg px-[2rem] pb-5 outline-none",
       },
     },
     immediatelyRender: false,

@@ -5,24 +5,53 @@ import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { initFirebase } from "../firebase";
 import { useRouter } from "next/navigation";
+import { db } from "../firebase";
+import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 const Signup = () => {
   // Init firebase
   initFirebase();
 
-  // define the provider as google as well as defining the auth hook
+  // Define the provider as Google as well as defining the auth hook
   const provider = new GoogleAuthProvider();
   const auth = getAuth();
   const [user, loading] = useAuthState(auth);
 
-  // router 
+  // Router
   const router = useRouter();
+
+  // FUNCTION TO CREATE DEFAULT "notes" FOLDER
+  const createDefaultFolder = async (userId) => {
+    const folderRef = doc(db, `users/${userId}/folders`, "notes");
+
+    try {
+      await setDoc(folderRef, {
+        name: "notes",
+        color: "#f4f4f5", // Default color or any other properties you want to set
+        createdAt: serverTimestamp(),
+        isDeletable: false,
+      });
+      console.log("Default 'notes' folder created.");
+    } catch (error) {
+      console.error("Error creating default folder: ", error);
+    }
+  };
 
   // FUNCTION TO SIGN IN USING GOOGLE POPUP
   const signIn = async () => {
     try {
-      await signInWithPopup(auth, provider);
-      router.push('/notes')
+      // Sign in the user
+      const result = await signInWithPopup(auth, provider);
+
+      // Get the user ID
+      const user = result.user;
+
+      // Create the default "notes" folder
+      await createDefaultFolder(user.uid);
+
+      // Redirect the user to the notes page
+      router.push("/notes");
+    
     } catch (error) {
       console.log("There was an error: ", error);
     }
